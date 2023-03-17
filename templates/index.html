@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Currency Checker</title>
+    <style>
+        .spinner {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Currency Checker</h1>
+    <form onsubmit="event.preventDefault(); fetchReport();">
+        <label for="start_date">Start date:</label>
+        <input type="date" id="start_date" name="start_date" required>
+        <label for="end_date">End date:</label>
+        <input type="date" id="end_date" name="end_date" required>
+        <label for="currencies">Currencies (comma-separated):</label>
+        <input type="text" id="currencies" name="currencies" required>
+        <button type="submit">Get Report</button>
+        <button type="button" onclick="openRawJson();">Open Raw JSON</button>
+    </form>
+    <div class="spinner" id="spinner">Loading...</div>
+    <table id="report_table" style="display:none;">
+        <thead>
+            <tr>
+                <th>Currency</th>
+                <th>Minimum</th>
+                <th>Maximum</th>
+                <th>Average</th>
+            </tr>
+        </thead>
+        <tbody id="report_table_body">
+        </tbody>
+    </table>
+    <script>
+        function showSpinner() {
+            document.getElementById("spinner").style.display = "block";
+        }
+
+        function hideSpinner() {
+            document.getElementById("spinner").style.display = "none";
+        }
+
+        function updateReportTable(data) {
+            const tableBody = document.getElementById("report_table_body");
+            tableBody.innerHTML = "";
+
+            for (const currencyData of data) {
+                const row = document.createElement("tr");
+                for (const value of [currencyData.currency, currencyData.minimum, currencyData.maximum, currencyData.average]) {
+                    const cell = document.createElement("td");
+                    cell.textContent = value;
+                    row.appendChild(cell);
+                }
+                tableBody.appendChild(row);
+            }
+
+            document.getElementById("report_table").style.display = "table";
+        }
+
+        async function fetchReport() {
+            const startDate = document.getElementById("start_date").value;
+            const endDate = document.getElementById("end_date").value;
+            const currencies = document.getElementById("currencies").value;
+
+            try {
+                const response = await fetch(`/report?start_date=${startDate}&end_date=${endDate}&currencies=${currencies}`);
+                if (!response.ok) {
+                    throw new Error(`Error fetching report: ${response.statusText}`);
+                }
+                const reportData = await response.json();
+                updateReportTable(reportData);
+                hideSpinner();
+            } catch (error) {
+                hideSpinner();
+                alert(error.message);
+            }
+        }
+
+        function openRawJson() {
+            const startDate = document.getElementById("start_date").value;
+            const endDate = document.getElementById("end_date").value;
+            const currencies = document.getElementById("currencies").value;
+            const url = `/report?start_date=${startDate}&end_date=${endDate}&currencies=${currencies}`;
+            window.open(url, '_blank');
+        }
+    </script>
+</body>
